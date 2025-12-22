@@ -1,7 +1,6 @@
 import socket
 from protocol_utils import ErrorDetector
 
-
 def run_receiver():
     HOST = '127.0.0.1'
     PORT = 65432
@@ -25,23 +24,22 @@ def run_receiver():
             packet = packet_bytes.decode('utf-8')
 
             try:
-                # Sadece ilk 2 ayırıcıyı dikkate al, geri kalan datanın parçası olabilir
+                # [cite_start]Paketi parçalara ayırma [cite: 57, 58]
                 parts = packet.split('|')
                 if len(parts) < 3:
                     raise ValueError("Packet missing control info")
 
-                # Veri kısmında '|' karakteri olma ihtimaline karşı sondan başa alıyoruz
                 control_rx = parts[-1]
                 method = parts[-2]
-                # Geri kalan her şey veridir (data içinde | varsa bozulmasın diye)
                 data_rx = "|".join(parts[:-2])
 
             except ValueError:
                 print(f"[ERROR] Malformed packet received: {packet}")
                 continue
 
-            # Yeniden Hesapla
-            control_calc = ""
+            # [cite_start]Yeniden kontrol bilgisi üretme [cite: 59, 60, 61, 62, 64]
+            control_calc = "ERROR"
+
             if method == "PARITY":
                 control_calc = ErrorDetector.calculate_parity(data_rx, 'even')
             elif method == "2DPARITY":
@@ -50,20 +48,26 @@ def run_receiver():
                 control_calc = ErrorDetector.calculate_crc(data_rx, 'CRC16')
             elif method == "CHECKSUM":
                 control_calc = ErrorDetector.calculate_checksum(data_rx)
+            elif method == "HAMMING":
+                control_calc = ErrorDetector.calculate_hamming(data_rx)
             else:
-                control_calc = "UNKNOWN_METHOD"
+                print(f"[!] Unknown method received: {method}")
+                control_calc = "UNKNOWN"
 
+            # [cite_start]Karşılaştırma ve Sonuç Yazdırma [cite: 65, 67, 72, 73]
             status = "DATA CORRECT" if control_calc == control_rx else "DATA CORRUPTED"
 
-            print(f"Received: {data_rx} | Method: {method} | Status: {status}")
-            if status == "DATA CORRUPTED":
-                print(f"   -> Expected: {control_rx}, Got: {control_calc}")
+            print(f"Received Data: {data_rx}")
+            print(f"Method: {method}")
+            print(f"Sent Check Bits: {control_rx}")
+            print(f"Computed Check Bits: {control_calc}")
+            print(f"Status: {status}")
+            print("-" * 20)
 
         except Exception as e:
             print(f"Error processing packet: {e}")
 
     sock.close()
-
 
 if __name__ == "__main__":
     run_receiver()
