@@ -75,13 +75,33 @@ class ErrorDetector:
         return f"{s:04X}"
 
     @staticmethod
+    @staticmethod
     def calculate_hamming(text):
-        # Basitleştirilmiş Hamming: Her karakteri kodlamak yerine
-        # veri bütünlüğü için sabit bir karmaşık kod üretir.
-        # Ancak ödev tanımına göre blok bazlı işlem bekleniyor[cite: 26].
-        # Burada örnek amaçlı verinin basit bir hash'ini kullanacağız,
-        # gerçek Hamming implementasyonu bu kapsamda çok uzundur.
-        return f"HAM-{len(text)}-{sum(bytearray(text.encode()))}"
+        # 4-bit veri blokları için Hamming(7,4) kontrol bitleri hesaplar
+        def get_hamming_7_4(bits_4):
+            # bits_4: 4 bitlik veri parçası (d1, d2, d3, d4)
+            d = [int(b) for b in bits_4]
+            # Kontrol bitleri XOR hesaplaması
+            p1 = d[0] ^ d[1] ^ d[3]
+            p2 = d[0] ^ d[2] ^ d[3]
+            p3 = d[1] ^ d[2] ^ d[3]
+            # 7 bitlik Hamming bloğunu döndürür
+            return f"{p1}{p2}{d[0]}{p3}{d[1]}{d[2]}{d[3]}"
+
+        # Tüm metni ikilik (binary) sisteme çevir
+        binary_data = "".join(format(ord(c), '08b') for c in text)
+        hamming_res = ""
+
+        # Veriyi 4 bitlik bloklara ayırarak işlem yap
+        for i in range(0, len(binary_data), 4):
+            block = binary_data[i:i + 4]
+            if len(block) == 4:
+                hamming_res += get_hamming_7_4(block)
+
+        # Sonucun çok uzun olmaması için ilk 16 bitlik kısmın Hex özetini döndür
+        # Bu değer, alıcı tarafta doğrulama için kullanılacak 'Control Information' olur [cite: 29]
+        checksum_val = int(hamming_res[:16], 2) if hamming_res else 0
+        return f"{checksum_val:04X}"
 
 
 class DataCorruptor:
