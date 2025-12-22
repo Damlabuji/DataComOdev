@@ -27,14 +27,10 @@ def run_sender():
         print("2. 2D Parity")
         print("3. CRC-16")
         print("4. Checksum (Internet)")
-        # Hamming basitleştirilmiş haliyle eklenebilir
+        print("5. Hamming Code")  # Yeni seçenek [cite: 7, 25]
 
-        choice = input("Selection (1-4): ")
+        choice = input("Selection (1-5): ")
 
-        method_name = "UNKNOWN"
-        control_info = ""
-
-        # 2. Kontrol Bilgisi Üret [cite: 11]
         if choice == '1':
             method_name = "PARITY"
             control_info = ErrorDetector.calculate_parity(text, 'even')
@@ -47,10 +43,9 @@ def run_sender():
         elif choice == '4':
             method_name = "CHECKSUM"
             control_info = ErrorDetector.calculate_checksum(text)
-        else:
-            print("Invalid choice, defaulting to CRC16")
-            method_name = "CRC16"
-            control_info = ErrorDetector.calculate_crc(text, 'CRC16')
+        elif choice == '5':  # Hamming Blok İşlemi [cite: 26]
+            method_name = "HAMMING"
+            control_info = ErrorDetector.calculate_hamming(text)
 
         # 3. Paketi Oluştur: DATA|METHOD|CONTROL [cite: 29]
         packet = f"{text}|{method_name}|{control_info}"
